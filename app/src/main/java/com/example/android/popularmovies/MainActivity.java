@@ -1,5 +1,6 @@
 package com.example.android.popularmovies;
 
+import android.net.Uri;
 import android.os.AsyncTask;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -9,8 +10,9 @@ import android.view.View;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
-import com.example.android.popularmovies.network.NetworkUtils;
 
+import com.example.android.popularmovies.network.MovieDbJsonUtils;
+import com.example.android.popularmovies.network.NetworkUtils;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -18,7 +20,6 @@ import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 
-import javax.net.ssl.HttpsURLConnection;
 
 public class MainActivity extends AppCompatActivity {
     private TextView mDisplay, mError;
@@ -34,7 +35,14 @@ public class MainActivity extends AppCompatActivity {
         mLodaingIndicator = (ProgressBar) findViewById(R.id.pb_loading_indicator);
         mError = (TextView) findViewById(R.id.error_message);
 
-        new FetchMovieTask().execute();
+        new FetchMovieTask().execute(NetworkUtils.buildNowPlayingMoviesUri());
+    }
+
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+
+//        outState.putParcelableArrayList("", null);
+        super.onSaveInstanceState(outState);
     }
 
     @Override
@@ -49,10 +57,12 @@ public class MainActivity extends AppCompatActivity {
 
         switch (itemId){
             case R.id.sort_by_popularity:
-                Toast.makeText(this, "Sort by Popularity", Toast.LENGTH_SHORT).show();
+                //Toast.makeText(this, "Sort by Popularity", Toast.LENGTH_SHORT).show();
+                new FetchMovieTask().execute(NetworkUtils.buildMostPopularMoviesUri());
                 break;
             case R.id.sort_by_rating:
-                Toast.makeText(this, "Sort by Rating", Toast.LENGTH_SHORT).show();
+                //Toast.makeText(this, "Sort by Rating", Toast.LENGTH_SHORT).show();
+                new FetchMovieTask().execute(NetworkUtils.buildHighestRatedrMoviesUri());
                 break;
             default:
                 break;
@@ -63,11 +73,12 @@ public class MainActivity extends AppCompatActivity {
 
     private void showLoadingIndicator(){
         mDisplay.setVisibility(View.INVISIBLE);
+        mError.setVisibility(View.INVISIBLE);
         mLodaingIndicator.setVisibility(View.VISIBLE);
     }
 
     private void showResults(){
-        mLodaingIndicator.setVisibility(View.INVISIBLE);
+        mError.setVisibility(View.INVISIBLE);
         mDisplay.setVisibility(View.VISIBLE);
     }
 
@@ -76,8 +87,7 @@ public class MainActivity extends AppCompatActivity {
         mError.setVisibility(View.VISIBLE);
     }
 
-    class FetchMovieTask extends AsyncTask<Void, Void, String>{
-
+    class FetchMovieTask extends AsyncTask<Uri, Void, String[]>{
 
         @Override
         protected void onPreExecute() {
@@ -85,9 +95,14 @@ public class MainActivity extends AppCompatActivity {
         }
 
         @Override
-        protected void onPostExecute(String result) {
+        protected void onPostExecute(String[] result) {
+            mLodaingIndicator.setVisibility(View.INVISIBLE);
             if(result != null && !result.equals("")) {
-                mDisplay.setText(result);
+                mDisplay.setText("");
+
+                for(String movie : result)
+                    mDisplay.append(movie + "\n\n");
+
                 showResults();
             }
             else
@@ -100,15 +115,16 @@ public class MainActivity extends AppCompatActivity {
         }
 
         @Override
-        protected String doInBackground(Void... params) {
+        protected String[] doInBackground(Uri... params) {
             HttpURLConnection connection = null;
-            URL movieApi = null;
+            URL movieApiUrl = null;
             String result = null;
+            String[] movies = null;
 
             try {
-                movieApi = new URL(NetworkUtils.buildLatestMoviesUri().toString());
+                movieApiUrl = new URL(params[0].toString());
 
-                connection = (HttpURLConnection) movieApi.openConnection();
+                connection = (HttpURLConnection) movieApiUrl.openConnection();
 
                 BufferedReader in = new BufferedReader(
                         new InputStreamReader(connection.getInputStream()));
@@ -121,14 +137,14 @@ public class MainActivity extends AppCompatActivity {
                 in.close();
 
                 result = response.toString();
+
+                movies = MovieDbJsonUtils.getJsonFromResponse(result);
             }
-            catch (MalformedURLException ex){
-                ex.printStackTrace();
+            catch (Exception e){
+                e.printStackTrace();
             }
-            catch (IOException ex){
-                ex.printStackTrace();
-            }
-            return result;
+
+            return movies;
         }
     }
 }

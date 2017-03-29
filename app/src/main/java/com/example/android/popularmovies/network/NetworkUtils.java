@@ -7,26 +7,70 @@ import android.net.Uri;
  */
 
 public class NetworkUtils {
-    static final String MOVIE_DB_API_URL = "https://api.themoviedb.org/3";
+    static final String MOVIE_DB_API_BASE_URL = "https://api.themoviedb.org/3";
+    static final String MOVIE_PATH = "movie";
+    private static final String API_KEY = "";
 
-    public static Uri buildLatestMoviesUri(){
-        Uri latestMoviesUri = Uri.parse(MOVIE_DB_API_URL).buildUpon()
-                .appendPath("movie")
+    public static Uri buildNowPlayingMoviesUri(){
+        Uri latestMoviesUri = Uri.parse(MOVIE_DB_API_BASE_URL).buildUpon()
+                .appendPath(MOVIE_PATH)
                 .appendPath("now_playing")
-                .appendQueryParameter("api_key", "6ed255df7d148f3b79ed6aa8294812e2")
+                .appendQueryParameter("api_key", API_KEY)
                 .build();
 
         return latestMoviesUri;
     }
 
-    public static Uri buildLatestMoviesUri(int page){
-        Uri latestMoviesUri = Uri.parse(MOVIE_DB_API_URL).buildUpon()
-                .appendPath("movie")
+    public static Uri buildNowPlayingMoviesUri(int page){
+        Uri latestMoviesUri = Uri.parse(MOVIE_DB_API_BASE_URL).buildUpon()
+                .appendPath(MOVIE_PATH)
                 .appendPath("now_playing")
-                .appendQueryParameter("api_key", "6ed255df7d148f3b79ed6aa8294812e2")
+                .appendQueryParameter("api_key", API_KEY)
                 .appendQueryParameter("page", String.valueOf(page))
                 .build();
 
         return latestMoviesUri;
+    }
+
+    public static Uri buildMostPopularMoviesUri(){
+        Uri mostPopularMoviesUri = Uri.parse(MOVIE_DB_API_BASE_URL).buildUpon()
+                .appendPath(MOVIE_PATH)
+                .appendPath("popular")
+                .appendQueryParameter("api_key", API_KEY)
+                .build();
+
+        return mostPopularMoviesUri;
+    }
+
+    public static Uri buildMostPopularMoviesUri(int page){
+        Uri mostPopularMoviesUri = Uri.parse(MOVIE_DB_API_BASE_URL).buildUpon()
+                .appendPath(MOVIE_PATH)
+                .appendPath("popular")
+                .appendQueryParameter("api_key", API_KEY)
+                .appendQueryParameter("page", String.valueOf(page))
+                .build();
+
+        return mostPopularMoviesUri;
+    }
+
+    public static Uri buildHighestRatedrMoviesUri(){
+        Uri mostPopularMoviesUri = Uri.parse(MOVIE_DB_API_BASE_URL).buildUpon()
+                .appendPath(MOVIE_PATH)
+                .appendPath("top_rated")
+                .appendQueryParameter("api_key", API_KEY)
+                .build();
+
+        return mostPopularMoviesUri;
+    }
+
+    public static Uri buildHighestRatedMoviesUri(int page){
+        Uri mostPopularMoviesUri = Uri.parse(MOVIE_DB_API_BASE_URL).buildUpon()
+                .appendPath(MOVIE_PATH)
+                .appendPath("top_rated")
+                .appendQueryParameter("api_key", API_KEY)
+                .appendQueryParameter("page", String.valueOf(page))
+                .build();
+
+        return mostPopularMoviesUri;
     }
 }
