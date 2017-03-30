@@ -1,9 +1,13 @@
 package com.example.android.popularmovies;
 
+import android.content.Intent;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.support.v7.widget.GridLayoutManager;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -13,26 +17,30 @@ import android.widget.Toast;
 
 import com.example.android.popularmovies.network.MovieDbJsonUtils;
 import com.example.android.popularmovies.network.NetworkUtils;
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
-import java.net.URL;
 
 
-public class MainActivity extends AppCompatActivity {
-    private TextView mDisplay, mError;
+public class MainActivity extends AppCompatActivity implements MovieAdapter.MovieAdapterOnClickListener {
+    private TextView mError;
 
-    private ProgressBar mLodaingIndicator;
+    private ProgressBar mLoadingIndicator;
+
+    private RecyclerView mMovieList;
+    private MovieAdapter movieAdapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        mDisplay = (TextView) findViewById(R.id.tv_display);
-        mLodaingIndicator = (ProgressBar) findViewById(R.id.pb_loading_indicator);
+        mMovieList = (RecyclerView) findViewById(R.id.rv_movie_list);
+        movieAdapter = new MovieAdapter(this);
+
+        LinearLayoutManager layoutManager = new GridLayoutManager(this, 2);
+
+        mMovieList.setLayoutManager(layoutManager);
+        mMovieList.setAdapter(movieAdapter);
+
+        mLoadingIndicator = (ProgressBar) findViewById(R.id.pb_loading_indicator);
         mError = (TextView) findViewById(R.id.error_message);
 
         new FetchMovieTask().execute(NetworkUtils.buildNowPlayingMoviesUri());
@@ -40,8 +48,6 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onSaveInstanceState(Bundle outState) {
-
-//        outState.putParcelableArrayList("", null);
         super.onSaveInstanceState(outState);
     }
 
@@ -62,7 +68,7 @@ public class MainActivity extends AppCompatActivity {
                 break;
             case R.id.sort_by_rating:
                 //Toast.makeText(this, "Sort by Rating", Toast.LENGTH_SHORT).show();
-                new FetchMovieTask().execute(NetworkUtils.buildHighestRatedrMoviesUri());
+                new FetchMovieTask().execute(NetworkUtils.buildHighestRatedMoviesUri());
                 break;
             default:
                 break;
@@ -71,19 +77,28 @@ public class MainActivity extends AppCompatActivity {
         return true;
     }
 
+    @Override
+    public void onMovieClick(String movieId){
+        //Toast.makeText(this, movieId, Toast.LENGTH_SHORT).show();
+        Intent intent = new Intent(this, MovieDetailActivity.class);
+        intent.putExtra(Intent.EXTRA_TEXT, movieId);
+
+        startActivity(intent);
+    }
+
     private void showLoadingIndicator(){
-        mDisplay.setVisibility(View.INVISIBLE);
+        mMovieList.setVisibility(View.INVISIBLE);
         mError.setVisibility(View.INVISIBLE);
-        mLodaingIndicator.setVisibility(View.VISIBLE);
+        mLoadingIndicator.setVisibility(View.VISIBLE);
     }
 
     private void showResults(){
         mError.setVisibility(View.INVISIBLE);
-        mDisplay.setVisibility(View.VISIBLE);
+        mMovieList.setVisibility(View.VISIBLE);
     }
 
     private void showError(){
-        mDisplay.setVisibility(View.INVISIBLE);
+        mMovieList.setVisibility(View.INVISIBLE);
         mError.setVisibility(View.VISIBLE);
     }
 
@@ -96,13 +111,9 @@ public class MainActivity extends AppCompatActivity {
 
         @Override
         protected void onPostExecute(String[] result) {
-            mLodaingIndicator.setVisibility(View.INVISIBLE);
+            mLoadingIndicator.setVisibility(View.INVISIBLE);
             if(result != null && !result.equals("")) {
-                mDisplay.setText("");
-
-                for(String movie : result)
-                    mDisplay.append(movie + "\n\n");
-
+                movieAdapter.setMovieData(result);
                 showResults();
             }
             else
@@ -116,27 +127,11 @@ public class MainActivity extends AppCompatActivity {
 
         @Override
         protected String[] doInBackground(Uri... params) {
-            HttpURLConnection connection = null;
-            URL movieApiUrl = null;
             String result = null;
             String[] movies = null;
 
             try {
-                movieApiUrl = new URL(params[0].toString());
-
-                connection = (HttpURLConnection) movieApiUrl.openConnection();
-
-                BufferedReader in = new BufferedReader(
-                        new InputStreamReader(connection.getInputStream()));
-                String inputLine;
-                StringBuffer response = new StringBuffer();
-
-                while ((inputLine = in.readLine()) != null) {
-                    response.append(inputLine);
-                }
-                in.close();
-
-                result = response.toString();
+                result = NetworkUtils.getResponseFromWeb(params[0]);
 
                 movies = MovieDbJsonUtils.getJsonFromResponse(result);
             }
