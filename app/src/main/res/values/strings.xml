@@ -3,4 +3,7 @@
     <string name="most_popular">Most Popular</string>
     <string name="top_rated">Top Rated</string>
     <string name="error_message">Could not load movies. Please try again later.</string>
+
+    <string name="share">Share</string>
+    <string name="visit_homepage">Visit Homepage</string>
 </resources>
